@@ -1,6 +1,6 @@
 #include <algorithm>
 #include "memory_system_tlb.h"
-#include "memory_system_policy_engine.h"
+#include "policy_engine.h"
 #include "constants.h"
 
 using std::distance;
