@@ -20,7 +20,7 @@ private:
     // New: Simulate physical memory frames using a list as a free-list tracker
     // False means the frame is free, True means it's allocated.
     vector<bool> physical_frames;
-    int internal_fragmentation;
+    long long internal_fragmentation;
 
 public:
     MMU(PolicyEngine pe) : tlb(TLB_SIZE), policy_engine(pe), internal_fragmentation(0)
