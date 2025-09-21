@@ -32,28 +32,47 @@ public:
      * @brief Finds and allocates a block of physical frames from the simulated free list.
      *  For num_frames > 1 (huge pages), it finds a contiguous block.
      *  For num_frames = 1 (small pages), it finds any single free frame.
-     * 
+     *
      * @param num_frames The number of contiguous frames to allocate
      * @return The starting index of the allocated frames, or -1 if allocation fails
      */
     int find_and_allocate_physical_frames(int num_frames)
     {
+        // if (num_frames == 1)
+        // {
+        //     // Find the first available frame for a small page
+        //     try
+        //     {
+        //         // Find the index of the first 'False' (free) frame
+        //         auto it = find(physical_frames.begin(), physical_frames.end(), false);
+        //         int frame_index = distance(physical_frames.begin(), it);
+        //         physical_frames[frame_index] = true;
+        //         return frame_index;
+        //     }
+        //     catch (...)
+        //     {
+        //         // If we couldn't find a free frame, throw an error
+        //         throw runtime_error("Out of physical memory");
+        //         return -1;
+        //     }
+        // }
+
         if (num_frames == 1)
         {
-            // Find the first available frame for a small page
-            try
+            // Find the first available frame for a small page.
+            auto it = find(physical_frames.begin(), physical_frames.end(), false);
+
+            // Correctly check if a free frame was found.
+            if (it == physical_frames.end())
             {
-                // Find the index of the first 'False' (free) frame
-                auto it = find(physical_frames.begin(), physical_frames.end(), false);
-                int frame_index = distance(physical_frames.begin(), it);
-                physical_frames[frame_index] = true;
-                return frame_index;
-            }
-            catch (...)
-            {
-                // If we couldn't find a free frame, throw an error
-                throw runtime_error("Out of physical memory");
+                // No free frame found, so memory is full.
                 return -1;
+            }
+            else
+            {
+                // A free frame was found. Mark it as allocated and return its index.
+                *it = true; // Set the found element to true
+                return distance(physical_frames.begin(), it);
             }
         }
         else
@@ -94,7 +113,12 @@ public:
     void allocate(int virtual_address, int request_size)
     {
         int page_size = policy_engine.decide_page_size(request_size);
-        int num_pages_needed = (request_size + page_size - 1) / page_size;
+        // int num_pages_needed = (request_size + page_size - 1) / page_size;
+
+        // Correctly calculate the number of pages needed by considering the start and end addresses.
+        int first_vpn = virtual_address / page_size;
+        int last_vpn = (virtual_address + request_size - 1) / page_size;
+        int num_pages_needed = last_vpn - first_vpn + 1;
         int allocated_memory = num_pages_needed * page_size;
         internal_fragmentation += (allocated_memory - request_size);
 
@@ -148,5 +172,20 @@ public:
             physical_frame = page_table[va_page_num].first;
             tlb.insert(va_page_num, physical_frame);
         }
+    }
+
+    int get_tlb_hit_rate()
+    {
+        return tlb.hit_rate();
+    }
+
+    int get_internal_fragmentation() const
+    {
+        return internal_fragmentation;
+    }
+
+    size_t get_page_table_size() const
+    {
+        return page_table.size();
     }
 };
